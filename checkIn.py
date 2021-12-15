@@ -3,7 +3,6 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import FCMManager as fcm
 import datetime
-licensePlateNumber='433S90031'#'435S45678'
 def ParkingCheck(doc_ref,db):
     get_id= doc_ref.get({u'id'})
     id= u'{}'.format(get_id.to_dict()['id'])
@@ -14,19 +13,12 @@ def ParkingCheck(doc_ref,db):
         for doc in doc_list:
             #checkin=doc.get('checkin')
             checkin= u'{}'.format(doc.to_dict()['checkin'])
+            #print('checkin',type(checkin),checkin)
             checkin = checkin == 'True'
-            print(doc.get('time')) 
+            #print(doc.get('time')) #False
             if checkin:
-                # print('trong bai')
+                #print('trong bai')
                 return True
-                # diff= datetime.datetime.timestamp(datetime.datetime.utcnow())-datetime.datetime.timestamp(doc.get('time'))
-                # if diff>=322746:#thoi gian chenh lech lon, co the luu dc
-                #     print('luu dc ')
-                #     return False
-                # else:#thoi gian chenh lech thap, xe van con o loi vao
-                #     print('xe con o lan vao')
-                #     return True
-                
             else:
                 # print('ngoai bai')
                 return False
@@ -41,13 +33,4 @@ def TrueResult(typeVehicle,License1):
         return True
     else:
         return False
-# if TrueResult('motorcycle',licensePlateNumber):
-#     print('oke')
-# db = firestore.client()
-# doc_ref=db.collection(u'LicensePlateNumber').document(licensePlateNumber)
-# doc=doc_ref.get()
-# if doc.exists:
-#     if ParkingCheck(doc_ref,db):
-#         print('trong bai')
-#     else:
-#         print('ngoai bai')
+
