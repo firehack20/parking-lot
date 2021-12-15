@@ -18,9 +18,10 @@ content_type = 'image/jpeg'
 headers = {'content-type': content_type}
 db = firestore.client()
 licenseNumber=''
-# typeVehicle='car'
+tryCount=0
 
 def saveIn(doc_ref):
+	print('Xe dang ngoai bai, cho xe di vao')
 	get_id= doc_ref.get({u'id'})
 	id= u'{}'.format(get_id.to_dict()['id'])
 	users_ref=db.collection(u'Users').document(id)
@@ -41,58 +42,71 @@ def saveIn(doc_ref):
 	print('saved!')
 
 while True:
-
+	
 	output = np.empty((480, 640, 3), dtype=np.uint8)
 	camera.capture(output,'rgb')
 	output = cv2.cvtColor(output , cv2.COLOR_BGR2RGB)
 	_, img_encoded= cv2.imencode('.jpg',output)
+	#print('truoc')
 	response=requests.post('http://detectparking.ddns.net/predict/',headers=headers ,data=img_encoded.tobytes())
-	print(response.text)
+	#print('sau')
+	#response='adu'
+	#typeVehicle='car'
+	#print('nhap bien so:')
+	#license1=input()
 	if len(response.text) > 1:#neu co hoi dap tu server thi thuc hien, k thi bo qua va gui anh tiep	
+		print(response.text)
 		typeVehicle, license1 = response.text.split('-')
-		license1=input()
 		if not checkIn.TrueResult(typeVehicle,license1):
-			print('ko du ky tu')
-			continue
+				print('khong du ky tu')
+				tryCount=0
+				continue
 		elif licenseNumber != license1:#neu nhan kq khac lan gui truoc
 			print(license1)
 			doc_ref=db.collection(u'LicensePlateNumber').document(license1)
 			doc=doc_ref.get()
+			tryCount+=1
 			if doc.exists:
 				print('exist')
 				if not checkIn.ParkingCheck(doc_ref,db):
-					print('xe ngoai bai')
 					saveIn(doc_ref)
 					servo.dongmocong()
+					tryCount=0
 				else:
-					print('luu roi di ra khoi lan')
-			else:#nhan dien sai, de admin nhan dien 
-				sendToAdmin(img_encoded,'Kiểm tra vào xe')
+					print('Luu roi di ra khoi lan')
+					tryCount=0
+			elif tryCount>2:#else:#nhan dien sai, de admin snhan dien 
+				print('Loi nhan dien')
+				sendToAdmin(img_encoded,'Kiem tra nhan dien')
 				license1=requests.get('http://detectparking.ddns.net/selfPredict/').text
 				while license1 == 'None':
 					license1=requests.get('http://detectparking.ddns.net/selfPredict/').text
 					continue
-				print(license1)
+				#print(license1)
 				dict=license1
 				res = json.loads(dict)
 				license1=str(res[u'command'])
+				#print(type(license1))
 				print(license1)
-				# print('nhap')
-				# license1=input()
 				doc_ref=db.collection(u'LicensePlateNumber').document(license1)
 				doc=doc_ref.get()
 				if doc.exists:#true
 					if not checkIn.ParkingCheck(doc_ref,db):
-						print('xe ngoai bai')
 						saveIn(doc_ref)
 						servo.dongmocong()
+						tryCount=0
 					else:
-						print('luu roi di ra khoi lan')
+						print('Luu roi di ra khoi lan')
+						tryCount=0
 				else:#chua dang ky
 					print('Chua dang ky tai khoan')
+					tryCount=0
 			licenseNumber=license1
 		else:
 			print('Trung lap bien so')
+			tryCount=0
 	else:
 		print('khong co xe')
+		tryCount=0
+		continue
 
